@@ -1,0 +1,39 @@
+version: "3.9"
+# Sovereign Codebase Vault — docker-compose
+# Usage: docker-compose up --build
+
+services:
+  codebase-vault:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: sovereign-codebase-vault:latest
+    container_name: sovereign-codebase-vault
+    restart: unless-stopped
+    ports:
+      - "8766:8766"
+    environment:
+      SBB_VAULT_INDEX_PATH: ${SBB_VAULT_INDEX_PATH}
+      SBB_EMBEDDING_MODEL: ${SBB_EMBEDDING_MODEL}
+      SBB_MAX_FILE_SIZE_MB: ${SBB_MAX_FILE_SIZE_MB}
+      SBB_EXCLUDE_PATTERNS: ${SBB_EXCLUDE_PATTERNS}
+      SBB_API_KEY: ${SBB_API_KEY:-change-me}
+      SBB_N8N_EVENT_BUS_URL: ${SBB_N8N_EVENT_BUS_URL:-http://host.docker.internal:5678/webhook/event-bus}
+      SERVICE_PORT: 8766
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./.data:/app/.data:rw
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8766/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - sbb-platform
+
+networks:
+  sbb-platform:
+    external: true
+    name: sbb-platform-network
